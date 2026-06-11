@@ -1,0 +1,11 @@
+*.o
+*.ko
+*.ko.zst
+*.mod
+*.mod.c
+*.mod.o
+*.cmd
+.*.cmd
+Module.symvers
+modules.order
+.module-common.o
