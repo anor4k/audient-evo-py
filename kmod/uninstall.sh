@@ -49,6 +49,12 @@ for rules in /etc/udev/rules.d/99-evo*.rules; do
     rm "$rules"
   fi
 done
+for f in /etc/udev/rules.d/70-evo-wait-master.rules /usr/local/bin/evo-wait-master /etc/modprobe.d/snd-usb-audio-evo.conf; do
+  if [[ -f "$f" ]]; then
+    echo "Removing $f..."
+    rm "$f"
+  fi
+done
 udevadm control --reload-rules 2>/dev/null || true
 
 # Remove systemd user services if installed

@@ -131,7 +131,34 @@ for dev in "${DEVICES[@]}"; do
     echo "Installing udev rule for ${dev}..."
     cp "$SCRIPT_DIR/${UDEV_RULE}" /etc/udev/rules.d/
 done
+
+# Hold the ALSA card add event until the volume control has been renamed, so
+# WirePlumber never probes the mixer before evo_raw has done its work.
+echo "Installing udev rename-wait rule and helper..."
+install -m 755 "$SCRIPT_DIR/evo-wait-master" /usr/local/bin/evo-wait-master
+cp "$SCRIPT_DIR/70-evo-wait-master.rules" /etc/udev/rules.d/
+if ! command -v amixer &>/dev/null; then
+    echo "  Warning: 'amixer' (alsa-utils) not found; the rename-wait helper is a no-op without it."
+fi
 udevadm control --reload-rules
+
+# snd-usb-audio quirk: ignore rejected mixer writes (kernel >= 7.2 otherwise
+# reports them to PipeWire, which then double-attenuates in software).
+# The string form of quirk_flags needs kernel >= 6.18; skip on older kernels
+# where the option would prevent snd_usb_audio from loading at all.
+QUIRK_CONF="snd-usb-audio-evo.conf"
+if modinfo -p snd_usb_audio 2>/dev/null | grep -q '^quirk_flags:.*quirkp'; then
+    echo "Installing snd-usb-audio quirk flags for EVO devices..."
+    cp "$SCRIPT_DIR/$QUIRK_CONF" /etc/modprobe.d/
+    # Apply live as well (takes effect the next time the device is probed).
+    QUIRK_VALUE=$(sed -n 's/^options snd_usb_audio quirk_flags=//p' "$SCRIPT_DIR/$QUIRK_CONF")
+    if [[ -w /sys/module/snd_usb_audio/parameters/quirk_flags ]]; then
+        echo "$QUIRK_VALUE" > /sys/module/snd_usb_audio/parameters/quirk_flags
+        echo "  Quirk flags applied live; reconnect the device for them to take effect."
+    fi
+else
+    echo "Kernel does not support per-device quirk_flags strings (< 6.18); skipping $QUIRK_CONF."
+fi
 
 # Load module
 echo "Loading module..."
