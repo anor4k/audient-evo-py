@@ -1,0 +1,15 @@
+# Hold the ALSA card "add" event for Audient EVO devices until evo_raw has
+# renamed the volume control to "Master Playback Volume".
+#
+# WirePlumber (ACP) probes the mixer as soon as it receives the udev event for
+# controlC*. evo_raw performs the rename slightly later, from a workqueue, so
+# on hot-plug ACP can see the original "EVO4  Playback Volume" name, match no
+# mixer path, and silently fall back to software volume until it is restarted.
+# PROGRAM= runs synchronously during rule processing and udev does not
+# broadcast the event to listeners until rules have finished, so waiting here
+# closes the race. The helper gives up after ~10 s and never fails the event.
+#
+# Install: /etc/udev/rules.d/70-evo-wait-master.rules
+ACTION=="add", SUBSYSTEM=="sound", KERNEL=="controlC[0-9]*", \
+  ATTRS{idVendor}=="2708", ATTRS{idProduct}=="0006|0007", \
+  PROGRAM="/usr/local/bin/evo-wait-master %n"

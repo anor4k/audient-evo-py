@@ -64,9 +64,14 @@ struct evo_device {
 };
 
 /*
- * The snd-usb-audio card may not be fully initialised when our driver
- * binds to interface 3; poll for the control with a backoff.
+ * The snd-usb-audio card is normally registered by the time our driver binds
+ * to interface 3 (interfaces probe in order), so try the rename immediately
+ * and only back off if the control is not there yet. Every millisecond counts:
+ * WirePlumber probes the mixer as soon as udev publishes the card, and a probe
+ * that sees the original name falls back to software volume. The udev rule in
+ * 70-evo-wait-master.rules covers the remaining window.
  */
+#define EVO_RENAME_FIRST_MS 0
 #define EVO_RENAME_RETRY_MS 200
 #define EVO_RENAME_MAX_RETRIES 50 /* ~10 seconds total */
 #define EVO_NEW_VOLUME_NAME "Master Playback Volume"
@@ -292,7 +297,7 @@ static int evo_probe(struct usb_interface *intf,
            dev->name, dev->name);
   usb_set_intfdata(intf, dev);
   schedule_delayed_work(&dev->rename_work,
-                        msecs_to_jiffies(EVO_RENAME_RETRY_MS));
+                        msecs_to_jiffies(EVO_RENAME_FIRST_MS));
   return 0;
 }
 

@@ -1,0 +1,26 @@
+#!/bin/sh
+# evo-wait-master - udev PROGRAM helper for Audient EVO devices.
+#
+# Usage: evo-wait-master <card-number>
+#
+# Polls the ALSA control interface of the given card until evo_raw has renamed
+# the output volume control to "Master Playback Volume", so that WirePlumber's
+# ACP probe (which happens after udev finishes processing the event) finds the
+# hardware mixer. Times out after ~10 s. Always exits 0: a timeout must not
+# make udev drop the event.
+#
+# Install: /usr/local/bin/evo-wait-master
+
+card="$1"
+[ -n "$card" ] || exit 0
+command -v amixer >/dev/null 2>&1 || exit 0
+
+i=0
+while [ "$i" -lt 100 ]; do
+    if amixer -c "$card" controls 2>/dev/null | grep -q "name='Master Playback Volume'"; then
+        exit 0
+    fi
+    sleep 0.1
+    i=$((i + 1))
+done
+exit 0
