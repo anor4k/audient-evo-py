@@ -1,6 +1,7 @@
 [Unit]
 Description=Load Audient EVO8 configuration on device connection
 ConditionPathExists=/dev/evo8
+ConditionPathExists=%h/.config/audient-evo-py/evo8/config.json
 
 [Service]
 Type=oneshot

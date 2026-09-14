@@ -15,9 +15,13 @@ SOURCE="evo8_mic_1_2"
 # Wait for PipeWire graph to settle
 sleep 2
 
-# Find node ID from wpctl status output
+# Find node ID by node.name. Use -n so wpctl prints names rather than
+# descriptions (51-*.conf renames the ALSA nodes), and stop before the
+# "Settings" section: its "Default Configured Devices" lines also contain
+# the node name, and matching one of those yields ID 0.
 get_node_id() {
-    wpctl status 2>/dev/null | grep -m1 "$1" | grep -oP '\d+(?=\.)' | head -1
+    wpctl status -n 2>/dev/null | sed '/^Settings/,$d' \
+        | grep -m1 -F " $1 " | grep -oP '\d+(?=\.)' | head -1
 }
 
 SINK_ID=$(get_node_id "$SINK")

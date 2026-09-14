@@ -305,9 +305,13 @@ def _run(args, evo: EVOController):
         print(f"Config saved to {path}")
 
     elif args.action == "load":
-        from evo.config import load_and_apply
+        from evo.config import config_file, load_and_apply
 
-        load_and_apply(evo, args.path)
+        try:
+            load_and_apply(evo, args.path)
+        except FileNotFoundError:
+            path = args.path or config_file(spec.name)
+            raise RuntimeError(f"no saved config at {path} (create one with 'evoctl save')")
         print("Config loaded and applied.")
 
     elif args.action == "status":

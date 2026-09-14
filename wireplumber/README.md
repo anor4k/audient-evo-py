@@ -50,24 +50,33 @@ alsa_input.usb-Audient_EVO4-00.analog-surround-40  (raw ALSA 4ch source)
 | File | Install location | Purpose |
 |------|-----------------|---------|
 | `evo4-stereo.conf` | `~/.config/pipewire/pipewire.conf.d/` | Three loopback modules: `evo4_loopback_output`, `evo4_mic`, `evo4_loopback_capture` |
-| `51-evo4.conf` | `~/.config/wireplumber/wireplumber.conf.d/` | Disables idle suspension (prevents clicks), disables upmix on output, renames ALSA nodes |
-| `alsa-soft-mixer.conf` | `~/.config/wireplumber/wireplumber.conf.d/` | Software volume on all ALSA devices for consistent behavior |
+| `51-evo4.conf` | `~/.config/wireplumber/wireplumber.conf.d/` | Disables UCM, disables idle suspension (prevents clicks), disables upmix on output, renames ALSA nodes |
 | `evo4-setup.sh` | `~/.local/bin/` | Sets EVO4 nodes as default sink/source via `wpctl` |
 | `evo4-setup.service` | `~/.config/systemd/user/` | Runs `evo4-setup.sh` at login |
 
 ## Volume Control
 
-Two independent layers:
+The raw ALSA sink (`EVO4 Hardware (4ch)`) is the default sink and PipeWire
+drives the EVO4's hardware mixer through it: media keys, `wpctl set-volume`,
+pavucontrol, the physical knob and `evoctl set volume` all move the same
+control. This relies on `evo_raw` renaming the control to `Master Playback
+Volume` and on the `snd-usb-audio` quirk installed by `kmod/install.sh` (see
+the top-level README).
 
-- **Software (PipeWire):** `wpctl set-volume`, `pavucontrol` - digital, reduces bit depth
-- **Hardware (EVO4):** physical knob or `evoctl.py set volume <0-100>` - analog, preserves bit depth
+Notes:
 
-For best quality: keep PipeWire at 100%, use the hardware knob or `evoctl`.
+- The sink is 4-channel; RL/RR (the loopback pair) are kept at 0 so stereo
+  apps never leak into the loopback bus. Use absolute values with `wpctl`
+  (`wpctl set-volume ID 0.6`); relative steps such as `1%-` are computed
+  against the muted channels by WirePlumber 0.5.x and collapse the volume to 0.
+- If volume changes only affect PipeWire and not the hardware after a
+  hot-plug, WirePlumber probed the card before the rename. The udev wait rule
+  prevents that; as a fallback `systemctl --user restart wireplumber` re-probes.
 
 ## Installation
 
 ```bash
-bash wireplumber/evo4-setup-install.sh
+bash wireplumber/install.sh
 ```
 
 Backs up existing configs, installs all files, restarts the audio stack, and sets defaults.

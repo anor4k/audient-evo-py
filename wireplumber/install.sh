@@ -6,7 +6,7 @@
 #
 # What it does:
 #   1. Backs up existing configs
-#   2. Installs loopback modules, WP rules, soft mixer config
+#   2. Installs loopback modules and WirePlumber device rules
 #   3. Installs setup script + systemd service
 #   4. Restarts PipeWire + WirePlumber
 #   5. Sets EVO stereo nodes as default devices
@@ -65,7 +65,6 @@ mkdir -p "$BACKUP_DIR"
 for f in \
   "$PW_CONF/${dev}-stereo.conf" \
   "$WP_CONF/51-${dev}.conf" \
-  "$WP_CONF/alsa-soft-mixer.conf" \
   "$SYSTEMD_USER/${dev}-setup.service" \
   "$LOCAL_BIN/${dev}-setup.sh"; do
   if [[ -f "$f" ]]; then
@@ -86,10 +85,6 @@ info "Installing WirePlumber device rules for $DEV_UPPER"
 mkdir -p "$WP_CONF"
 cp "$DEV_DIR/51-${dev}.conf" "$WP_CONF/51-${dev}.conf"
 ok "51-${dev}.conf -> $WP_CONF/"
-
-info "Installing shared ALSA soft mixer config"
-cp "$SCRIPT_DIR/alsa-soft-mixer.conf" "$WP_CONF/alsa-soft-mixer.conf"
-ok "alsa-soft-mixer.conf -> $WP_CONF/"
 
 info "Installing setup script for $DEV_UPPER"
 mkdir -p "$LOCAL_BIN"
@@ -144,7 +139,6 @@ echo ""
 echo "  Installed:"
 echo "    $PW_CONF/${dev}-stereo.conf"
 echo "    $WP_CONF/51-${dev}.conf"
-echo "    $WP_CONF/alsa-soft-mixer.conf"
 echo "    $LOCAL_BIN/${dev}-setup.sh"
 echo "    $SYSTEMD_USER/${dev}-setup.service"
 echo ""

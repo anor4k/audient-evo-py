@@ -52,7 +52,22 @@ python -m pip install -e .[dev,audio-test]  # audio tests only
 
 ### Kernel module
 
-Builds and installs kernel module, adds udev rule loads the module.
+Builds and installs the kernel module, udev rules and the `snd-usb-audio`
+quirk file, then loads the module.
+
+Besides exposing `/dev/evo*`, `evo_raw` renames the ALSA volume control to
+`Master Playback Volume` so PipeWire drives the **hardware** mixer for media
+keys, `wpctl` and pavucontrol. Two more files make that reliable:
+
+- `70-evo-wait-master.rules` + `evo-wait-master`: hold the ALSA card's udev
+  event until the rename is done, so WirePlumber never probes the mixer too
+  early and silently falls back to software volume on hot-plug.
+- `snd-usb-audio-evo.conf` (`/etc/modprobe.d/`): `IGNORE_CTL_ERROR` quirk for
+  EVO devices. The firmware rejects some mixer writes (e.g. the -127 dB minimum
+  PipeWire sends to the loopback channels); since kernel 7.2 that error reaches
+  PipeWire, which then applies the volume a second time in software (too quiet,
+  brief L/R mismatch, drifting volume). Only installed on kernels >= 6.18 that
+  accept per-device `quirk_flags` strings.
 
 Optional steps (prompted by install.sh):
 - Install using DKMS (to auto-rebuild after kernel update)
@@ -65,8 +80,24 @@ sudo ./install.sh
 
 ### WirePlumber config
 
-EVO 4 needs none - covered by `alsa-ucm-conf >= 1.2.16`. An EVO 8 reference
-config lives under [dev/wireplumber/](dev/wireplumber/README.md).
+The EVO 4 config under [wireplumber/](wireplumber/README.md) splits the
+4-channel ALSA device into stereo main/loopback sinks and sources, disables UCM
+(a UCM profile would displace the 4-channel device those loopbacks need) and
+keeps hardware volume on the raw sink. An EVO 8 reference config lives under
+[dev/wireplumber/](dev/wireplumber/README.md).
+
+```bash
+bash wireplumber/install.sh
+```
+
+### Arch Linux package
+
+`PKGBUILD` builds everything above into one package (CLI, DKMS module, udev,
+modprobe, systemd user units, PipeWire/WirePlumber drop-ins):
+
+```bash
+makepkg -si
+```
 
 ### 96 kHz playback
 
