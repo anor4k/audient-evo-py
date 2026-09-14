@@ -10,7 +10,7 @@
 
 pkgname=audient-evo-git
 _modname=evo_raw
-pkgver=0.2.1.r0.0000000
+pkgver=0.2.1.r88.eb6fbb0
 pkgrel=1
 pkgdesc="Linux controller for Audient EVO USB audio interfaces (CLI, TUI, evo_raw DKMS module, PipeWire config)"
 arch=('any')
@@ -88,5 +88,6 @@ package() {
         -t "$pkgdir/usr/share/wireplumber/wireplumber.conf.d"
 
     install -Dm644 LICENSE -t "$pkgdir/usr/share/licenses/$pkgname"
-    install -Dm644 README.md wireplumber/README.md -t "$pkgdir/usr/share/doc/$pkgname"
+    install -Dm644 README.md "$pkgdir/usr/share/doc/$pkgname/README.md"
+    install -Dm644 wireplumber/README.md "$pkgdir/usr/share/doc/$pkgname/README-wireplumber.md"
 }
