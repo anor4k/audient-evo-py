@@ -1,0 +1,23 @@
+post_install() {
+    cat <<'MSG'
+audient-evo: post-install steps
+  * Add yourself to the 'dialout' group for /dev/evo* access:
+        sudo usermod -aG dialout $USER      (re-login afterwards)
+  * The snd-usb-audio quirk in /usr/lib/modprobe.d/snd-usb-audio-evo.conf
+    takes effect on the next device probe. Apply it now without a reboot:
+        sudo sh -c 'sed -n "s/^options snd_usb_audio quirk_flags=//p" \
+            /usr/lib/modprobe.d/snd-usb-audio-evo.conf \
+            > /sys/module/snd_usb_audio/parameters/quirk_flags'
+    then reconnect the interface.
+  * Reload the audio stack once so the EVO 4 drop-ins are picked up:
+        systemctl --user restart pipewire pipewire-pulse wireplumber
+        systemctl --user enable --now evo4-setup.service
+  * If the files were previously installed by hand, remove those copies
+    (kmod/uninstall.sh, wireplumber/uninstall.sh) so they do not shadow
+    the packaged ones.
+MSG
+}
+
+post_upgrade() {
+    echo "audient-evo: reconnect the interface (or reboot) for module/quirk changes to apply."
+}

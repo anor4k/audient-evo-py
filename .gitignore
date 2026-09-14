@@ -26,3 +26,8 @@ build/
 Dockerfile
 docker-compose.yml
 .dockerignore
+
+# makepkg
+pkg/
+src/
+*.pkg.tar*
